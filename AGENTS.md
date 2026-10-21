@@ -35,9 +35,9 @@ before changing engine code.
 ## Commands
 
 ```bash
-make build                  # fetch-data + toolchain + wasm (~5.5 GB download the first time)
-make start                  # http://127.0.0.1:8090/ — serves web/dist with wenilla-host
-make native                 # native desktop build of warcraft-survivors
+just build                  # fetch-data + toolchain + wasm (~5.5 GB download the first time)
+just start                  # http://127.0.0.1:8090/ — serves web/dist with wenilla-host
+just native                 # native desktop build of warcraft-survivors
 scripts/web-build.sh        # → web/dist. WEB_DEBUG=1 keeps symbols for readable stack traces.
 cargo check --target wasm32-unknown-unknown -p wenilla --no-default-features --features webgpu
                             # the wasm build without linking; what check.yml runs
@@ -45,7 +45,7 @@ cargo check --workspace --all-targets      # native (Debian/Ubuntu: libasound2-d
 cargo test --workspace                     # ~320 tests need a 1.12.1 patch chain and fail without one
 ```
 
-Runtime switches: `WOW_DATA` (the `Data` path, native), `WOW_GRADE=0` / `?grade=0` (picture grade
+Recipes are in `justfile`; `just` lists them. Runtime switches: `WOW_DATA` (the `Data` path, native), `WOW_GRADE=0` / `?grade=0` (picture grade
 off), `WOW_SURVIVORS_AUTO=<Class>[:idle|:all|:late]` (a bot plays a run and logs every 10 s; see
 `survivors/auto.rs`), `WOW_SURVIVORS_MAP=<index or name>`, `WOW_SURVIVORS_SHOTS=<dir>`. Use the
 auto run to check a balance change.
@@ -90,7 +90,7 @@ google-chrome --user-data-dir=/tmp/wenilla-chrome --enable-unsafe-webgpu --remot
 | the wasm panics at boot with `RuntimeError: unreachable` | rebuild with `WEB_DEBUG=1`; check for a WebGPU adapter first; `?bridge=0` rules the bridge out |
 | wasm-bindgen glue errors at load | version drift: rerun `scripts/web-setup.sh` |
 | a change builds natively and not for wasm | `cargo check --target wasm32…`; look for std time, threads or a native-only crate |
-| no game data / the world does not load | `make fetch-data`; `wow-data/Data/` must hold `terrain.MPQ` and `patch.MPQ` |
+| no game data / the world does not load | `just fetch-data`; `wow-data/Data/` must hold `terrain.MPQ` and `patch.MPQ` |
 | no sound in the browser | the page resumes the AudioContext on the first gesture; the mixer backend is per target in `sound/mixer.rs` |
 | the world freezes ~200 ms at zone lines | the soundscape carry (`sound/zone.rs`, `sound/web_load.rs`), wasm-only |
 | short stalls on the first play of a sound in the browser | the SFX carry (`sound/kit/deferred.rs`), wasm-only |

@@ -52,11 +52,11 @@ minutes. **No server, no login, no account** — fully offline and self-containe
 ```bash
 git clone https://github.com/OutThisLife/azeroth-survivors-re
 cd azeroth-survivors-re
-make build     # fetch game data + install toolchain + build the wasm (~5.5 GB download)
-make start     # → open http://127.0.0.1:8090/
+just build     # fetch game data + install toolchain + build the wasm (~5.5 GB download)
+just start     # → open http://127.0.0.1:8090/
 ```
 
-`make build` chains three re-runnable scripts, each skipping what's already done:
+`just build` chains three re-runnable scripts, each skipping what's already done:
 
 | Step | What it does |
 | --- | --- |
@@ -64,9 +64,9 @@ make start     # → open http://127.0.0.1:8090/
 | `scripts/web-setup.sh` | installs the wasm toolchain (wasi-sdk, wasm-bindgen, binaryen) |
 | `scripts/web-build.sh` | builds the client into `web/dist/` |
 
-**Prerequisites:** [Rust](https://rustup.rs/), `make`, `curl`, `unzip`, and a bash shell. On Windows, run everything from Git Bash; PowerShell and cmd can't run the scripts.
+**Prerequisites:** [Rust](https://rustup.rs/), [`just`](https://just.systems/), `curl`, `unzip`, and a bash shell. On Windows, run everything from Git Bash; PowerShell and cmd can't run the scripts.
 
-Run `make` (or `make help`) to list every target.
+Run `just` (or `just --list`) to list every recipe.
 
 ## Controls
 
@@ -79,7 +79,7 @@ to pause, **1/2/3** to pick a level-up card.
 This repo ships **no Blizzard content** — no art, models, sounds, maps, MPQ contents, or
 FrameXML. The game reads a WoW 1.12.1 client's `Data` folder at runtime, which you supply.
 
-`make build` (via `scripts/fetch-data.sh`) downloads the **English WoW 1.12.1 (build 5875)**
+`just build` (via `scripts/fetch-data.sh`) downloads the **English WoW 1.12.1 (build 5875)**
 client from [archive.org](https://archive.org/details/WoW_1.12.1-5875) (~5.5 GB) and extracts the
 MPQs into `wow-data/Data/` (git-ignored, resumable, skipped when already present). Or point at a
 client you already have with `--data` / `WOW_DATA`.
@@ -90,7 +90,7 @@ If the archive.org item moves or you have your own mirror, override the URL with
 anything:
 
 ```bash
-make build WOW_DATA_URL=https://your-mirror.example/client.zip
+WOW_DATA_URL=https://your-mirror.example/client.zip just build
 ```
 
 Or set it permanently by editing the single clearly-marked `DEFAULT_DATA_URL` line at the top of
