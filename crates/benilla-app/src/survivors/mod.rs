@@ -4,6 +4,26 @@
 //! on a battleground picked at the menu ([`data::MAPS`]), with the player controller and FrameXML
 //! off ([`crate::run_mode::CaptureMode`]).
 
+// Strict lints for the survivors module only; the engine keeps upstream's. Same set as the
+// other Rust projects (nuz, template/rust_simple), minus the crate-level lints a module cannot
+// scope (`unused_crate_dependencies`, `mod_module_files`).
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+// Bevy systems take `Res`/`Query`/`Commands` by value, and a system's parameter list is its
+// dependency declaration (upstream allows `too_many_arguments` for the same reason).
+#![allow(clippy::needless_pass_by_value, clippy::too_many_arguments)]
+#![forbid(unsafe_code)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::todo,
+    clippy::unimplemented,
+    clippy::tests_outside_test_module,
+    clippy::indexing_slicing,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    clippy::dbg_macro
+)]
+
 mod abilities;
 mod auto;
 mod cards;

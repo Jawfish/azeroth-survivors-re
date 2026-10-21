@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use super::data::{AbilityDef, Effect, Kind};
 use super::enemies::{self, Enemy, Loot};
 use super::hero::{self, Hero};
-use super::units::{self, flat, Fx, Marks, UnitSpec, COLOR_HEAL, COLOR_MELEE, COLOR_SPELL};
+use super::units::{self, COLOR_HEAL, COLOR_MELEE, COLOR_SPELL, Fx, Marks, UnitSpec, flat};
 use super::{Rng, Run, RunEntity};
 use crate::net::{FieldChanged, Guid, ObjectStore};
 

@@ -6,13 +6,13 @@
 //! name>` picks the battleground.
 
 use bevy::prelude::*;
-use bevy::render::view::screenshot::{save_to_disk, Screenshot};
+use bevy::render::view::screenshot::{Screenshot, save_to_disk};
 
 use super::enemies::{Enemy, Gem};
 use super::hero::Hero;
 use super::hud::{self, Offer};
 use super::units::flat;
-use super::{data, Phase, Rng, Run, Selection};
+use super::{Phase, Rng, Run, Selection, data};
 
 #[derive(Resource)]
 pub(super) struct Auto {

@@ -3,6 +3,8 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 data_dir := "wow-data"
 data := data_dir / "Data"
 wasm := "web/dist/wenilla_bg.wasm"
+# Our code: the only place formatting and the strict lints apply. The engine keeps upstream's style.
+survivors := "crates/benilla-app/src/survivors"
 
 [private]
 default:
@@ -40,17 +42,17 @@ check:
 check-wasm:
     cargo check --locked --target wasm32-unknown-unknown -p wenilla --no-default-features --features webgpu
 
-# Run strict linting
+# Lint the survivors module (strict set in its mod.rs); engine warnings are filtered out
 lint:
-    cargo clippy --locked --workspace --all-targets -- -D warnings
+    cargo clippy --locked -p benilla-app --lib --message-format=short 2>&1 | grep -E '^{{survivors}}/' | tee /dev/stderr | (! grep -q .)
 
-# Format code
+# Format the survivors module (never the engine)
 fmt:
-    cargo fmt --all
+    rustfmt --config-path {{survivors}}/rustfmt.toml {{survivors}}/mod.rs
 
-# Check formatting
+# Check the survivors module's formatting
 fmt-check:
-    cargo fmt --all -- --check
+    rustfmt --check --config-path {{survivors}}/rustfmt.toml {{survivors}}/mod.rs
 
 # Remove the fetched game data and wasm build output
 clean:

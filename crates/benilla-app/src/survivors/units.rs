@@ -5,8 +5,8 @@ use benilla_protocol::messages::{ObjectFields, ObjectType};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 
-use super::data::Weapon;
 use super::RunEntity;
+use super::data::Weapon;
 use crate::combat_text::CombatTextSpawn;
 use crate::creature_anim::{CastEvent, CastEventKind, PlaySeq, SpellGoTargets, SwingMessage};
 use crate::net::{FieldChanged, Guid, NetEntity, ObjectStore};

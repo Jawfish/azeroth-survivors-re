@@ -77,6 +77,11 @@ google-chrome --user-data-dir=/tmp/wenilla-chrome --enable-unsafe-webgpu --remot
   The Barrens' tuned ladder (`ENEMIES`), so a change there moves every zone.
 - **Both launchers call `run_survivors`.** Behaviour that differs between web and native differs
   inside `benilla-app`, behind `#[cfg(target_arch = "wasm32")]`, never in a launcher.
+- **Format and strict lints cover the survivors module only.** `just fmt` / `just fmt-check` run
+  rustfmt with `survivors/rustfmt.toml`; `just lint` reports only survivors findings, under the
+  strict set at the top of `survivors/mod.rs` (pedantic, nursery, deny `unwrap_used`,
+  `indexing_slicing`, `print_*`, ...). Never run `cargo fmt --all` or apply that set to the
+  engine: it would rewrite upstream files and every merge would conflict.
 - **Keep engine changes small and gated.** Prefer the survivors module or a new file. A change
   inside an engine file goes under a `#[cfg]` where it can. That keeps a future merge from
   benilla or wenilla cheap (`docs/UPSTREAM.md` is wenilla's merge process; this repo has no

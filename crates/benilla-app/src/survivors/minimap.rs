@@ -15,14 +15,14 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat};
 
 use benilla_assets::{LockRecover, MapCatalogRes, WorldAssets};
-use benilla_formats::{tile_to_world, world_to_tile, MinimapTranslate};
+use benilla_formats::{MinimapTranslate, tile_to_world, world_to_tile};
 use benilla_world::world_map::CurrentMap;
 use benilla_world::world_point::WorldPoint;
 
+use super::Run;
 use super::enemies::Enemy;
 use super::hero::Hero;
 use super::hud::UiArt;
-use super::Run;
 use crate::area::AreaTableRes;
 
 /// The composite's edge in texels; the 140-unit widget is ~200 px at 1080p.

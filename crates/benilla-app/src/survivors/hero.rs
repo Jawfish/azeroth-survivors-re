@@ -6,9 +6,9 @@ use bevy::input::mouse::{AccumulatedMouseMotion, MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 
 use super::data::{self, ClassDef};
-use super::units::{self, flat, wow_to_bevy, yaw_toward, Fx, Marks, UnitSpec};
+use super::units::{self, Fx, Marks, UnitSpec, flat, wow_to_bevy, yaw_toward};
 use super::{Phase, Run, Selection};
-use crate::creature_anim::{move_flags, MovementState};
+use crate::creature_anim::{MovementState, move_flags};
 use crate::net::{FieldChanged, Guid, ObjectStore};
 
 #[derive(Component)]

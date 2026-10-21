@@ -5,7 +5,7 @@ use bevy::prelude::*;
 
 use super::enemies::Enemy;
 use super::hero::{self, Hero};
-use super::units::{flat, Fx};
+use super::units::{Fx, flat};
 use super::{Phase, Run};
 use benilla_world::world_point::WorldPoint;
 

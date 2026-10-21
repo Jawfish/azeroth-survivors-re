@@ -6,7 +6,7 @@ need_stdout = false
 watch = ["crates"]
 
 [jobs.clippy]
-command = ["cargo", "clippy", "--locked", "--color", "always", "--workspace", "--all-targets", "--", "-D", "warnings"]
+command = ["cargo", "clippy", "--locked", "--color", "always", "-p", "benilla-app", "--lib"]
 need_stdout = false
 watch = ["crates"]
 

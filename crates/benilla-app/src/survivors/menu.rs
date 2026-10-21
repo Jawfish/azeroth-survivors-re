@@ -8,16 +8,16 @@
 use bevy::prelude::*;
 use bevy::ui_render::ui_material::MaterialNode;
 
-use super::hud::{looks_for, rgb, start_run, HudFont, MenuRoot};
-use super::{data, Phase, Rng, Run, Selection};
+use super::hud::{HudFont, MenuRoot, looks_for, rgb, start_run};
+use super::{Phase, Rng, Run, Selection, data};
 use crate::char_select::race_name;
-use crate::glue::art::{class_tc, race_tc, tc_rect, GlueArt, DIM, GOLD, NAME_EDGE};
+use crate::glue::GlueClicks;
+use crate::glue::art::{DIM, GOLD, GlueArt, NAME_EDGE, class_tc, race_tc, tc_rect};
 use crate::glue::backdrop::{backdrop_border, tiled_bg_node};
 use crate::glue::widgets::{
-    abs, glue_button, icon_button, outlined_text, GlueBtnKind, GlueDisabled, GlueText, Hilight,
-    HoverLabel, LockHighlight,
+    GlueBtnKind, GlueDisabled, GlueText, Hilight, HoverLabel, LockHighlight, abs, glue_button,
+    icon_button, outlined_text,
 };
-use crate::glue::GlueClicks;
 
 /// The create screen's two race columns.
 const ALLIANCE: [u8; 4] = [1, 3, 4, 7];

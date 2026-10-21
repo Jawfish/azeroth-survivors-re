@@ -9,10 +9,10 @@ use bevy::prelude::*;
 
 use super::abilities::Hit;
 use super::data::{self, EnemyDef};
-use super::hero::{self, Hero, HERO_RADIUS};
-use super::units::{self, flat, yaw_toward, Fx, Marks, UnitSpec, COLOR_HURT};
+use super::hero::{self, HERO_RADIUS, Hero};
+use super::units::{self, COLOR_HURT, Fx, Marks, UnitSpec, flat, yaw_toward};
 use super::{Phase, Rng, Run, Selection};
-use crate::creature_anim::{move_flags, MovementState};
+use crate::creature_anim::{MovementState, move_flags};
 use crate::net::{FieldChanged, Guid, ObjectStore};
 
 #[derive(Component)]

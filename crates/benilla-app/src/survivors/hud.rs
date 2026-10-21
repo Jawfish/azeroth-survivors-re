@@ -1260,11 +1260,7 @@ pub(super) fn refresh_hud(
     let banner = match run.banner.as_mut() {
         Some((msg, t)) => {
             *t -= time.delta_secs();
-            if *t > 0.0 {
-                msg.clone()
-            } else {
-                String::new()
-            }
+            if *t > 0.0 { msg.clone() } else { String::new() }
         }
         None => String::new(),
     };
@@ -1527,8 +1523,8 @@ pub(super) fn hero_plate(
     mut level: Query<(&mut Text, &mut TextFont), With<HpLevel>>,
 ) {
     use crate::vplates::{
-        gx_px, plate_basis, text_px, BAR_H, BAR_OFF_X, BAR_OFF_Y, BAR_W, LEVEL_H, LEVEL_OFF_X,
-        LEVEL_OFF_Y, PLATE_H, PLATE_W,
+        BAR_H, BAR_OFF_X, BAR_OFF_Y, BAR_W, LEVEL_H, LEVEL_OFF_X, LEVEL_OFF_Y, PLATE_H, PLATE_W,
+        gx_px, plate_basis, text_px,
     };
     let seat = hero.single().ok().and_then(|h| {
         let (cam, tf) = cams.single().ok()?;
@@ -1758,7 +1754,10 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
     let burst = def.duration <= 0.0;
     let mut s = match def.kind {
         Kind::Bolt | Kind::Strike | Kind::Melee => {
-            let toughest = matches!(def.key, "pyroblast" | "aimed_shot" | "exorcism" | "starfire");
+            let toughest = matches!(
+                def.key,
+                "pyroblast" | "aimed_shot" | "exorcism" | "starfire"
+            );
             let melee = def.kind == Kind::Melee;
             let who = match (toughest, melee, c.count) {
                 (true, _, 1) => "the toughest enemy in range".to_string(),
@@ -1768,16 +1767,29 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
                 (false, false, 1) => "the nearest enemy".into(),
                 (false, false, n) => format!("the {n} nearest enemies"),
             };
-            let mut s = format!("{} {who} for {d} damage", if melee { "Strikes" } else { "Hits" });
+            let mut s = format!(
+                "{} {who} for {d} damage",
+                if melee { "Strikes" } else { "Hits" }
+            );
             if c.radius > 0.0 && !melee {
                 s += &format!(", and everything within {} yd of the hit", num(c.radius));
             }
             s
         }
-        Kind::Nova => format!("Deals {d} damage to every enemy within {} yd of you", num(c.radius)),
-        Kind::Cone => format!("Deals {d} damage to every enemy in a {} yd cone toward the closest", num(c.radius)),
+        Kind::Nova => format!(
+            "Deals {d} damage to every enemy within {} yd of you",
+            num(c.radius)
+        ),
+        Kind::Cone => format!(
+            "Deals {d} damage to every enemy in a {} yd cone toward the closest",
+            num(c.radius)
+        ),
         Kind::Ground | Kind::GroundSelf => {
-            let at = if def.kind == Kind::GroundSelf { "around you" } else { "on the thickest pack" };
+            let at = if def.kind == Kind::GroundSelf {
+                "around you"
+            } else {
+                "on the thickest pack"
+            };
             if burst {
                 format!("Strikes a {} yd area {at} for {d} damage", num(c.radius))
             } else {
@@ -1807,10 +1819,17 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
         Kind::Orbit => format!(
             "Every {} sec, zaps {} within {} yd of you for {d} damage",
             num(c.cooldown),
-            if c.count == 1 { "an enemy".to_string() } else { format!("{} enemies", c.count) },
+            if c.count == 1 {
+                "an enemy".to_string()
+            } else {
+                format!("{} enemies", c.count)
+            },
             num(c.radius)
         ),
-        Kind::Shield => format!("Absorbs the next {d} damage you take within {} sec", num(c.duration)),
+        Kind::Shield => format!(
+            "Absorbs the next {d} damage you take within {} sec",
+            num(c.duration)
+        ),
         Kind::Immune => format!(
             "When an enemy closes in, makes you immune to all damage for {} sec",
             num(c.duration)
@@ -1819,7 +1838,10 @@ fn ability_body(def: &AbilityDef, c: &Cast) -> String {
             "When enemies close in, deals {d} damage to every attacker for {} sec",
             num(c.duration)
         ),
-        Kind::Heal => format!("Below 85% health, heals you for {d} over {} sec", num(c.duration)),
+        Kind::Heal => format!(
+            "Below 85% health, heals you for {d} over {} sec",
+            num(c.duration)
+        ),
         Kind::Totem if def.key == "magma_totem" => format!(
             "Drops a totem for {} sec that burns every enemy within {} yd for {d} damage every 2 sec",
             num(c.duration),
