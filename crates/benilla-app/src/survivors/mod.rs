@@ -198,15 +198,15 @@ pub(super) struct Selection {
 
 impl Selection {
     pub fn class_def(&self) -> Option<&'static ClassDef> {
-        self.class.map(|i| &data::CLASSES[i])
+        self.class.and_then(|i| data::CLASSES.get(i))
     }
 
     pub fn map_def(&self) -> &'static data::MapDef {
-        &data::MAPS[self.map.min(data::MAPS.len() - 1)]
+        data::map_at(self.map)
     }
 
     pub fn stage_def(&self) -> &'static data::MapDef {
-        &data::MAPS[self.stage.min(data::MAPS.len() - 1)]
+        data::map_at(self.stage)
     }
 }
 
@@ -295,7 +295,7 @@ pub(super) struct Run {
 impl Default for Run {
     fn default() -> Self {
         Self {
-            class: &data::CLASSES[0],
+            class: &data::WARRIOR,
             race: 0,
             elapsed: 0.0,
             kills: 0,

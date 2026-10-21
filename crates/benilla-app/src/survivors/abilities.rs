@@ -233,11 +233,14 @@ pub(super) fn cast_abilities(
     };
 
     for i in 0..run.abilities.len() {
-        run.abilities[i].cd -= dt;
-        if run.abilities[i].cd > 0.0 {
+        let Some(o) = run.abilities.get_mut(i) else {
+            continue;
+        };
+        o.cd -= dt;
+        if o.cd > 0.0 {
             continue;
         }
-        let o = &run.abilities[i];
+        let o = &*o;
         let def = o.def;
         let mult = o.damage_mult() * stats.might;
         let p = Params {
@@ -268,7 +271,9 @@ pub(super) fn cast_abilities(
                     false
                 } else {
                     if def.kind == Kind::Melee {
-                        fx.swing(me, targets[0].e, p.dmg);
+                        if let Some(first) = targets.first() {
+                            fx.swing(me, first.e, p.dmg);
+                        }
                         for f in &targets {
                             fx.impact(f.e, def.spell);
                         }
@@ -366,7 +371,9 @@ pub(super) fn cast_abilities(
                 Some(first) => {
                     let mut chain = vec![first];
                     while chain.len() < p.count + 1 {
-                        let last = chain[chain.len() - 1].pos;
+                        let Some(last) = chain.last().map(|c| c.pos) else {
+                            break;
+                        };
                         let next = foes
                             .iter()
                             .filter(|f| !chain.iter().any(|c| c.e == f.e))
@@ -528,7 +535,9 @@ pub(super) fn cast_abilities(
                 }
             }
         };
-        run.abilities[i].cd = if fired { p.cooldown } else { 0.2 };
+        if let Some(o) = run.abilities.get_mut(i) {
+            o.cd = if fired { p.cooldown } else { 0.2 };
+        }
     }
 }
 

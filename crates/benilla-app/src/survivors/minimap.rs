@@ -91,15 +91,25 @@ impl Rgba {
         let (fx, fy) = (x - x0 as f32, y - y0 as f32);
         let at = |x: usize, y: usize| {
             let i = (y * self.w + x) * 4;
-            [0, 1, 2, 3].map(|c| f32::from(self.px[i + c]))
+            self.px
+                .get(i..i + 4)
+                .and_then(|p| <[u8; 4]>::try_from(p).ok())
+                .map_or([0.0; 4], |p| p.map(f32::from))
         };
-        let (a, b, c, d) = (at(x0, y0), at(x1, y0), at(x0, y1), at(x1, y1));
-        [0, 1, 2, 3].map(|k| {
-            let top = a[k] + (b[k] - a[k]) * fx;
-            let bottom = c[k] + (d[k] - c[k]) * fx;
-            top + (bottom - top) * fy
-        })
+        bilerp([at(x0, y0), at(x1, y0), at(x0, y1), at(x1, y1)], fx, fy)
     }
+}
+
+/// Bilinear mix of the four corners `[top-left, top-right, bottom-left, bottom-right]`.
+fn bilerp<const N: usize>(corners: [[f32; N]; 4], fx: f32, fy: f32) -> [f32; N] {
+    let [a, b, c, d] = corners;
+    let mut out = [0.0; N];
+    for ((o, (a, b)), (c, d)) in out.iter_mut().zip(a.iter().zip(&b)).zip(c.iter().zip(&d)) {
+        let top = a + (b - a) * fx;
+        let bottom = c + (d - c) * fx;
+        *o = top + (bottom - top) * fy;
+    }
+    out
 }
 
 struct Art {
@@ -146,7 +156,12 @@ impl MiniMap {
     }
 
     fn view_radius(&self) -> f32 {
-        ZOOM_CHUNKS[self.zoom] * 0.5 * CHUNK_YARDS
+        let chunks = ZOOM_CHUNKS
+            .get(self.zoom)
+            .or_else(|| ZOOM_CHUNKS.last())
+            .copied()
+            .unwrap_or_default();
+        chunks * 0.5 * CHUNK_YARDS
     }
 }
 
@@ -432,26 +447,33 @@ pub(super) fn compose(
         if !(0..2).contains(&cx) || !(0..2).contains(&cy) {
             return [0.0; 3];
         }
-        match window[cy as usize][cx as usize] {
-            Some(px) => {
-                let (lx, ly) = (x.rem_euclid(TILE_PX as i32), y.rem_euclid(TILE_PX as i32));
-                let i = (ly as usize * TILE_PX + lx as usize) * 4;
-                [f32::from(px[i]), f32::from(px[i + 1]), f32::from(px[i + 2])]
-            }
-            None => [0.0; 3],
-        }
+        let tile = window
+            .get(cy as usize)
+            .and_then(|row| row.get(cx as usize))
+            .copied()
+            .flatten();
+        let Some(px) = tile else {
+            return [0.0; 3];
+        };
+        let (lx, ly) = (x.rem_euclid(TILE_PX as i32), y.rem_euclid(TILE_PX as i32));
+        let i = (ly as usize * TILE_PX + lx as usize) * 4;
+        px.get(i..i + 3)
+            .and_then(|p| <[u8; 3]>::try_from(p).ok())
+            .map_or([0.0; 3], |p| p.map(f32::from))
     };
 
     let half = SIDE as f32 / 2.0;
     let buf = &mut map.buf;
-    for v in 0..SIDE {
-        for u in 0..SIDE {
-            let o = (v * SIDE + u) * 4;
+    let (pixels, _) = buf.as_chunks_mut::<4>();
+    for (v, row) in pixels.chunks_exact_mut(SIDE).enumerate() {
+        for (u, pix) in row.iter_mut().enumerate() {
             let mask = match &art.mask {
                 Some(m) => {
                     let (mx, my) = (u * m.w / SIDE, v * m.h / SIDE);
                     let i = (my * m.w + mx) * 4;
-                    m.px[i].min(m.px[i + 3])
+                    m.px.get(i..i + 4)
+                        .and_then(|p| <[u8; 4]>::try_from(p).ok())
+                        .map_or(0, |[r, _, _, a]| r.min(a))
                 }
                 None => {
                     let d = Vec2::new(u as f32 + 0.5 - half, v as f32 + 0.5 - half).length();
@@ -459,24 +481,23 @@ pub(super) fn compose(
                 }
             };
             if mask == 0 {
-                buf[o..o + 4].copy_from_slice(&[0; 4]);
+                *pix = [0; 4];
                 continue;
             }
             let g = origin + (Vec2::new(u as f32, v as f32) + 0.5 - half) * tex_per_px - 0.5;
             let (x0, y0) = (g.x.floor() as i32, g.y.floor() as i32);
             let (fx, fy) = (g.x - x0 as f32, g.y - y0 as f32);
-            let (a, b, c, d) = (
-                texel(x0, y0),
-                texel(x0 + 1, y0),
-                texel(x0, y0 + 1),
-                texel(x0 + 1, y0 + 1),
+            let [r, g, b] = bilerp(
+                [
+                    texel(x0, y0),
+                    texel(x0 + 1, y0),
+                    texel(x0, y0 + 1),
+                    texel(x0 + 1, y0 + 1),
+                ],
+                fx,
+                fy,
             );
-            for k in 0..3 {
-                let top = a[k] + (b[k] - a[k]) * fx;
-                let bottom = c[k] + (d[k] - c[k]) * fx;
-                buf[o + k] = (top + (bottom - top) * fy) as u8;
-            }
-            buf[o + 3] = mask;
+            *pix = [r as u8, g as u8, b as u8, mask];
         }
     }
 
@@ -539,15 +560,21 @@ fn blit(buf: &mut [u8], at: Vec2, size: f32, shade: impl Fn(Vec2) -> Option<[f32
     for y in y_lo..y_hi {
         for x in x_lo..x_hi {
             let o = (y * SIDE + x) * 4;
-            if buf[o + 3] == 0 {
+            let Some(pix) = buf
+                .get_mut(o..o + 4)
+                .and_then(|p| <&mut [u8; 4]>::try_from(p).ok())
+            else {
+                continue;
+            };
+            if pix[3] == 0 {
                 continue;
             }
             let q = Vec2::new(x as f32 + 0.5, y as f32 + 0.5) - at;
             let Some(src) = shade(q) else { continue };
             let a = src[3] / 255.0;
-            for k in 0..3 {
-                let dst = f32::from(buf[o + k]);
-                buf[o + k] = (dst + (src[k] - dst) * a) as u8;
+            for (dst, src) in pix.iter_mut().take(3).zip(src) {
+                let d = f32::from(*dst);
+                *dst = (d + (src - d) * a) as u8;
             }
         }
     }

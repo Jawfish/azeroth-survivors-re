@@ -187,9 +187,12 @@ pub(super) fn drive(
                 );
                 if auto.all {
                     for key in run.class.pool {
+                        let Some(def) = data::ability(key) else {
+                            continue;
+                        };
                         if !run.abilities.iter().any(|o| o.def.key == *key) {
                             run.abilities.push(super::Owned {
-                                def: data::ability(key),
+                                def,
                                 level: 1,
                                 cd: 0.5,
                             });

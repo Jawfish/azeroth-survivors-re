@@ -884,20 +884,15 @@ pub(super) fn menu_preview(
     let Some((class, (display, race, sex))) = want else {
         return;
     };
+    let Some(class) = data::CLASSES.get(class) else {
+        return;
+    };
     let mut pos = hero::arena(selection.stage_def());
     if let Some(h) = world.terrain_height_under(pos) {
         pos.y = h;
     }
     let serial = run.guid();
-    hero::spawn_hero(
-        &mut commands,
-        &data::CLASSES[class],
-        display,
-        race,
-        sex,
-        serial,
-        pos,
-    );
+    hero::spawn_hero(&mut commands, class, display, race, sex, serial, pos);
 }
 
 pub(super) fn start_run(run: &mut Run, selection: &mut Selection) -> bool {
@@ -916,11 +911,13 @@ pub(super) fn start_run(run: &mut Run, selection: &mut Selection) -> bool {
         next_guid,
         ..Run::default()
     };
-    run.abilities.push(Owned {
-        def: data::ability(class.start),
-        level: 1,
-        cd: 0.5,
-    });
+    if let Some(def) = data::ability(class.start) {
+        run.abilities.push(Owned {
+            def,
+            level: 1,
+            cd: 0.5,
+        });
+    }
     run.hp = run.stats().max_hp;
     run.version += 1;
     true
@@ -935,8 +932,11 @@ fn choices_for(run: &Run, rng: &mut Rng) -> Vec<Choice> {
     }
     if run.abilities.len() < data::MAX_ABILITIES {
         for key in run.class.pool {
-            if !run.abilities.iter().any(|o| o.def.key == *key) {
-                pool.push((Choice::NewAbility(data::ability(key)), 1.0));
+            if run.abilities.iter().any(|o| o.def.key == *key) {
+                continue;
+            }
+            if let Some(def) = data::ability(key) {
+                pool.push((Choice::NewAbility(def), 1.0));
             }
         }
     }
@@ -992,9 +992,17 @@ pub(super) fn pick(
             level: 1,
             cd: 0.3,
         }),
-        Choice::Upgrade(k) => run.abilities[k].level += 1,
+        Choice::Upgrade(k) => {
+            if let Some(o) = run.abilities.get_mut(k) {
+                o.level += 1;
+            }
+        }
         Choice::NewPassive(p) => run.passives.push((p, 1)),
-        Choice::UpPassive(k) => run.passives[k].1 += 1,
+        Choice::UpPassive(k) => {
+            if let Some(p) = run.passives.get_mut(k) {
+                p.1 += 1;
+            }
+        }
         Choice::Heal => run.hp = run.stats().max_hp,
     }
     run.version += 1;
@@ -1133,7 +1141,9 @@ pub(super) fn describe_card(
             }
         }
         Choice::Upgrade(k) => {
-            let o = &run.abilities[k];
+            let Some(o) = run.abilities.get(k) else {
+                return describe_card(Choice::Heal, run, spells);
+            };
             let next = o.level + 1;
             let stats = run.stats();
             let (a, b) = (
@@ -1184,7 +1194,9 @@ pub(super) fn describe_card(
             ranks: Some((0, data::MAX_PASSIVE_LEVEL)),
         },
         Choice::UpPassive(k) => {
-            let (p, level) = run.passives[k];
+            let Some(&(p, level)) = run.passives.get(k) else {
+                return describe_card(Choice::Heal, run, spells);
+            };
             let fmt = |v: f32| match p.stat {
                 Stat::Regen | Stat::Armor => num(v),
                 _ => pct(v),

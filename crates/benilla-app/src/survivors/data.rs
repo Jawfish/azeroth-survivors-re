@@ -878,11 +878,9 @@ pub(crate) static ABILITIES: &[AbilityDef] = &[
     ),
 ];
 
-pub(crate) fn ability(key: &str) -> &'static AbilityDef {
-    ABILITIES
-        .iter()
-        .find(|a| a.key == key)
-        .unwrap_or_else(|| panic!("survivors: no ability {key:?}"))
+/// The ability named `key`, `None` for a key [`ABILITIES`] lacks (a test checks every class's).
+pub(crate) fn ability(key: &str) -> Option<&'static AbilityDef> {
+    ABILITIES.iter().find(|a| a.key == key)
 }
 
 pub(crate) const MAX_ABILITY_LEVEL: u8 = 8;
@@ -986,32 +984,35 @@ pub(crate) static PASSIVES: &[PassiveDef] = &[
     },
 ];
 
+/// The first class: the default `Run` and the fallback for an index past [`CLASSES`].
+pub(crate) const WARRIOR: ClassDef = ClassDef {
+    id: 1,
+    name: "Warrior",
+    color: 0xC79C6E,
+    power: 1,
+    start: "cleave",
+    pool: &[
+        "cleave",
+        "heroic_strike",
+        "whirlwind",
+        "thunder_clap",
+        "sweeping_strikes",
+        "demoralizing_shout",
+        "execute",
+        "mortal_strike",
+        "retaliation",
+    ],
+    looks: &[
+        1300, 1374, 1375, 1504, 1578, 1599, 1707, 1721, 1880, 2096, 2103, 2113, 2196, 2198, 2614,
+        2620, 2658, 3053, 3054, 3055, 3280, 3287, 3343, 3399, 3431, 3743, 3793, 3794, 4242, 4556,
+        6071, 11037,
+    ],
+    weapons: &[(0, 7483, 2, 7, 1, 13, 3), (1, 1706, 4, 6, 1, 14, 4)],
+    sheath: 1,
+};
+
 pub(crate) static CLASSES: &[ClassDef] = &[
-    ClassDef {
-        id: 1,
-        name: "Warrior",
-        color: 0xC79C6E,
-        power: 1,
-        start: "cleave",
-        pool: &[
-            "cleave",
-            "heroic_strike",
-            "whirlwind",
-            "thunder_clap",
-            "sweeping_strikes",
-            "demoralizing_shout",
-            "execute",
-            "mortal_strike",
-            "retaliation",
-        ],
-        looks: &[
-            1300, 1374, 1375, 1504, 1578, 1599, 1707, 1721, 1880, 2096, 2103, 2113, 2196, 2198,
-            2614, 2620, 2658, 3053, 3054, 3055, 3280, 3287, 3343, 3399, 3431, 3743, 3793, 3794,
-            4242, 4556, 6071, 11037,
-        ],
-        weapons: &[(0, 7483, 2, 7, 1, 13, 3), (1, 1706, 4, 6, 1, 14, 4)],
-        sheath: 1,
-    },
+    WARRIOR,
     ClassDef {
         id: 2,
         name: "Paladin",
@@ -1404,18 +1405,21 @@ pub(crate) struct MapDef {
     bosses: &'static [Foe],
 }
 
+/// The first battleground, with the hand-tuned ladder: the fallback when [`MAPS`] is empty.
+pub(crate) const BARRENS: MapDef = MapDef {
+    name: "The Barrens",
+    zone: "Kalimdor",
+    map: 1,
+    // The plains south of the Crossroads.
+    center: [-950.0, -2700.0, 92.0],
+    leash: 150.0,
+    victory: "The Barrens are yours.",
+    foes: &[],
+    bosses: &[],
+};
+
 pub(crate) static MAPS: &[MapDef] = &[
-    MapDef {
-        name: "The Barrens",
-        zone: "Kalimdor",
-        map: 1,
-        // The plains south of the Crossroads.
-        center: [-950.0, -2700.0, 92.0],
-        leash: 150.0,
-        victory: "The Barrens are yours.",
-        foes: &[],
-        bosses: &[],
-    },
+    BARRENS,
     MapDef {
         name: "The Dark Portal",
         zone: "Blasted Lands",
@@ -1973,8 +1977,23 @@ static ROSTERS: std::sync::LazyLock<Vec<Roster>> = std::sync::LazyLock::new(|| {
         .collect()
 });
 
+/// No creatures: only what [`roster`] answers if [`MAPS`] were empty.
+static NO_ROSTER: Roster = Roster {
+    enemies: Vec::new(),
+    bosses: Vec::new(),
+};
+
+/// The roster of battleground `map`, the last one's for an index past the table.
 pub(crate) fn roster(map: usize) -> &'static Roster {
-    &ROSTERS[map.min(ROSTERS.len() - 1)]
+    ROSTERS
+        .get(map)
+        .or_else(|| ROSTERS.last())
+        .unwrap_or(&NO_ROSTER)
+}
+
+/// Battleground `i`, the last one for an index past the table (a stale saved pick).
+pub(crate) fn map_at(i: usize) -> &'static MapDef {
+    MAPS.get(i).or_else(|| MAPS.last()).unwrap_or(&BARRENS)
 }
 
 /// Number a roster off a tuned ladder: each creature takes the health, damage and experience at
@@ -2001,7 +2020,8 @@ fn ladder(foes: &[Foe], tuned: &[EnemyDef]) -> Vec<EnemyDef> {
             } else {
                 0.0
             };
-            let (lo, hi) = (rungs[t.floor() as usize], rungs[t.ceil() as usize]);
+            let lo = rungs.get(t.floor() as usize).copied().unwrap_or_default();
+            let hi = rungs.get(t.ceil() as usize).copied().unwrap_or(lo);
             let k = t.fract();
             let mix = |a: f32, b: f32| (a + (b - a) * k).round();
             EnemyDef {
@@ -2017,4 +2037,24 @@ fn ladder(foes: &[Foe], tuned: &[EnemyDef]) -> Vec<EnemyDef> {
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CLASSES, ability};
+
+    #[test]
+    fn every_class_ability_exists() {
+        for class in CLASSES {
+            assert!(
+                ability(class.start).is_some(),
+                "{}: no ability {}",
+                class.name,
+                class.start
+            );
+            for key in class.pool {
+                assert!(ability(key).is_some(), "{}: no ability {key}", class.name);
+            }
+        }
+    }
 }

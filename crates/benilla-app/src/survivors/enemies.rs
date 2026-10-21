@@ -173,7 +173,9 @@ pub(super) fn spawn_enemies(
 
     let due_bosses = ((elapsed / data::BOSS_EVERY_SECS) as u32).min(roster.bosses.len() as u32);
     while run.bosses < due_bosses {
-        let def = &roster.bosses[run.bosses as usize];
+        let Some(def) = roster.bosses.get(run.bosses as usize) else {
+            break;
+        };
         let a = rng.range(0.0, std::f32::consts::TAU);
         let pos = ground(
             &world,
@@ -189,18 +191,19 @@ pub(super) fn spawn_enemies(
     let due_rings = ((elapsed + data::BOSS_EVERY_SECS / 2.0) / data::BOSS_EVERY_SECS) as u32;
     if run.rings < due_rings {
         run.rings = due_rings;
-        let def = &roster.enemies[pool[0]];
-        let n = 28 + (data::progress(elapsed) * 60.0) as usize;
-        for i in 0..n {
-            let a = i as f32 / n as f32 * std::f32::consts::TAU;
-            let pos = ground(
-                &world,
-                hpos + Vec3::new(a.cos(), 0.0, a.sin()) * 26.0,
-                hpos.y,
-            );
-            spawn_enemy(&mut commands, &mut run, def, pos, hpos, false);
+        if let Some(def) = roster.enemies.get(pool[0]) {
+            let n = 28 + (data::progress(elapsed) * 60.0) as usize;
+            for i in 0..n {
+                let a = i as f32 / n as f32 * std::f32::consts::TAU;
+                let pos = ground(
+                    &world,
+                    hpos + Vec3::new(a.cos(), 0.0, a.sin()) * 26.0,
+                    hpos.y,
+                );
+                spawn_enemy(&mut commands, &mut run, def, pos, hpos, false);
+            }
+            run.banner = Some(("They're surrounding you!".into(), 3.0));
         }
-        run.banner = Some(("They're surrounding you!".into(), 3.0));
     }
 
     spawner.timer -= time.delta_secs();
@@ -215,7 +218,12 @@ pub(super) fn spawn_enemies(
     }
     let n = (((target - alive) as f32) / 6.0).ceil().min(4.0) as usize;
     for _ in 0..n {
-        let def = &roster.enemies[pool[rng.index(pool.len())]];
+        let Some(def) = pool
+            .get(rng.index(pool.len()))
+            .and_then(|&tier| roster.enemies.get(tier))
+        else {
+            continue;
+        };
         let a = rng.range(0.0, std::f32::consts::TAU);
         let r = rng.range(34.0, 42.0);
         let pos = ground(&world, hpos + Vec3::new(a.cos(), 0.0, a.sin()) * r, hpos.y);
@@ -270,7 +278,9 @@ pub(super) fn move_enemies(
                     if j == i {
                         continue;
                     }
-                    let (_, other, or) = bodies[j];
+                    let Some(&(_, other, or)) = bodies.get(j) else {
+                        continue;
+                    };
                     let d = flat(pos - other);
                     let len = d.length();
                     let min = r + or;

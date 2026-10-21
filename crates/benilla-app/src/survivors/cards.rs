@@ -90,7 +90,7 @@ fn spell_tier(def: &data::AbilityDef, run: &Run) -> Rarity {
         .class
         .pool
         .iter()
-        .filter_map(|k| power(data::ability(k)))
+        .filter_map(|k| data::ability(k).and_then(power))
         .collect();
     all.sort_by(f32::total_cmp);
     let rank = all.iter().filter(|&&p| p < mine).count() as f32 / all.len().max(1) as f32;
@@ -109,7 +109,9 @@ pub(super) fn rarity(choice: Choice, run: &Run) -> Rarity {
     match choice {
         Choice::NewAbility(def) => spell_tier(def, run),
         Choice::Upgrade(k) => {
-            let o = &run.abilities[k];
+            let Some(o) = run.abilities.get(k) else {
+                return Rarity::Uncommon;
+            };
             let next = o.level + 1;
             let targets = [3, 5, 7].contains(&next)
                 && matches!(
@@ -125,10 +127,10 @@ pub(super) fn rarity(choice: Choice, run: &Run) -> Rarity {
             }
         }
         Choice::NewPassive(_) => Rarity::Uncommon,
-        Choice::UpPassive(k) => match run.passives[k].1 + 1 {
-            n if n == data::MAX_PASSIVE_LEVEL => Rarity::Epic,
-            n if n + 1 == data::MAX_PASSIVE_LEVEL => Rarity::Rare,
-            2 => Rarity::Common,
+        Choice::UpPassive(k) => match run.passives.get(k).map(|p| p.1 + 1) {
+            Some(n) if n == data::MAX_PASSIVE_LEVEL => Rarity::Epic,
+            Some(n) if n + 1 == data::MAX_PASSIVE_LEVEL => Rarity::Rare,
+            Some(2) => Rarity::Common,
             _ => Rarity::Uncommon,
         },
         Choice::Heal => Rarity::Common,
@@ -483,8 +485,8 @@ pub(super) fn animate_cards(
         if pick_fade >= 1.0 {
             *vis = Visibility::Hidden;
         }
-        if card.index < shine_at.len() {
-            shine_at[card.index] = Some(card.t);
+        if let Some(slot) = shine_at.get_mut(card.index) {
+            *slot = Some(card.t);
         }
     }
     for (shine, mut node) in &mut shines {

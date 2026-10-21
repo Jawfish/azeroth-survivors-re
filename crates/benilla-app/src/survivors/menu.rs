@@ -106,7 +106,10 @@ pub(super) fn restore_pick(
     }
     if class < data::CLASSES.len() {
         let all = all_looks(creatures);
-        if let Some(l) = find(&all[class], Some(race as u8), Some(sex as u8)) {
+        if let Some(l) = all
+            .get(class)
+            .and_then(|looks| find(looks, Some(race as u8), Some(sex as u8)))
+        {
             set(&mut selection, &all, class, l);
         }
     }
@@ -128,7 +131,7 @@ fn find(looks: &[(u32, u8, u8)], race: Option<u8>, sex: Option<u8>) -> Option<us
 
 fn set(sel: &mut Selection, all: &[Vec<(u32, u8, u8)>], class: usize, look: usize) {
     sel.class = Some(class);
-    sel.looks = all[class].clone();
+    sel.looks = all.get(class).cloned().unwrap_or_default();
     sel.look = Some(look);
     sel.version += 1;
 }
@@ -408,7 +411,7 @@ fn zone_frame(ui: &mut ChildSpawnerCommands, art: &GlueArt, f: &Handle<Font>) {
             (i, lo, hi)
         })
         .collect();
-    order.sort_by_key(|&(i, lo, _)| (lo, data::MAPS[i].name));
+    order.sort_by_key(|&(i, lo, _)| (lo, data::map_at(i).name));
 
     ui.spawn(Node {
         position_type: PositionType::Absolute,
@@ -456,7 +459,7 @@ fn zone_frame(ui: &mut ChildSpawnerCommands, art: &GlueArt, f: &Handle<Font>) {
             1.0,
         );
         for (row, &(i, lo, hi)) in order.iter().enumerate() {
-            let map = &data::MAPS[i];
+            let map = data::map_at(i);
             frame
                 .spawn((
                     MenuAction::Map(i),
@@ -567,13 +570,14 @@ pub(super) fn menu_clicks(
                 .flat_map(|(c, looks)| (0..looks.len()).map(move |l| (c, l)))
                 .collect();
             if !picks.is_empty() {
-                let (c, l) = picks[rng.index(picks.len())];
-                set(&mut selection, &all, c, l);
+                if let Some(&(c, l)) = picks.get(rng.index(picks.len())) {
+                    set(&mut selection, &all, c, l);
+                }
             }
         }
         // The class keeps the race and gender where it can.
         MenuAction::Class(c) => {
-            let looks = &all[c];
+            let looks: &[_] = all.get(c).map_or(&[], Vec::as_slice);
             let l = find(looks, race, Some(sex))
                 .or_else(|| find(looks, race, None))
                 .or_else(|| find(looks, None, Some(sex)))
@@ -586,7 +590,8 @@ pub(super) fn menu_clicks(
         MenuAction::Race(r) => {
             let classes = selection.class.into_iter().chain(0..all.len());
             for c in classes {
-                let l = find(&all[c], Some(r), Some(sex)).or_else(|| find(&all[c], Some(r), None));
+                let looks: &[_] = all.get(c).map_or(&[], Vec::as_slice);
+                let l = find(looks, Some(r), Some(sex)).or_else(|| find(looks, Some(r), None));
                 if let Some(l) = l {
                     set(&mut selection, &all, c, l);
                     break;
@@ -595,7 +600,7 @@ pub(super) fn menu_clicks(
         }
         MenuAction::Sex(s) => {
             if let Some(c) = selection.class {
-                if let Some(l) = find(&all[c], race, Some(s)) {
+                if let Some(l) = all.get(c).and_then(|looks| find(looks, race, Some(s))) {
                     set(&mut selection, &all, c, l);
                 }
             }
