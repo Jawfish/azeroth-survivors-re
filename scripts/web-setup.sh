@@ -13,7 +13,12 @@ WASI_SDK_VERSION="${WASI_SDK_VERSION:-27}"
 WASI_DIR="tools/wasi-sdk"
 
 echo "== rustup target"
-rustup target add wasm32-unknown-unknown
+# Under Nix (devenv.nix) there is no rustup: rust-toolchain.toml already brings the target.
+if command -v rustup >/dev/null; then
+  rustup target add wasm32-unknown-unknown
+else
+  echo "no rustup; expecting the toolchain to carry wasm32-unknown-unknown (rust-toolchain.toml)"
+fi
 
 echo "== wasm-bindgen-cli (pinned to Cargo.lock)"
 want=$(awk '/^name = "wasm-bindgen"$/{getline; sub(/version = /,""); gsub(/"/,""); print; exit}' Cargo.lock)

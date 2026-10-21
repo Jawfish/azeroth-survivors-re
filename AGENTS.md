@@ -29,10 +29,19 @@ before changing engine code.
 | `scripts/web-setup.sh`, `scripts/web-build.sh` | wasm toolchain and build |
 | `third_party/` | patched `lua-src`, `mlua-sys`, `kira`; each keeps its own license |
 | `reference/` | 1.12 API surface tables the engine tracks |
+| `rust-toolchain.toml` | the pinned Rust channel and the wasm32 target; read by rustup and by Nix |
+| `devenv.nix`, `devenv.yaml`, `.envrc` | the dev shell (direnv + devenv) |
+| `flake.nix` | `nix build`: the native game as a package |
 | `.github/workflows/check.yml` | wasm check, host and page tests, client-carry tests (PRs and pushes to `main`) |
 | `.github/workflows/ci.yml` | upstream's gates: fmt, clippy, tests (PRs from forks) |
 
 ## Commands
+
+The dev shell is devenv (`devenv.nix`, loaded by direnv through `.envrc`): the pinned Rust
+toolchain with the wasm target, `wasm-bindgen-cli` at the `Cargo.lock` version, binaryen, Bevy's
+system libraries, mold for native links, just and bacon. Run `direnv allow` once. When
+`Cargo.lock` bumps `wasm-bindgen`, bump `wasm-bindgen-cli_0_2_*` in `devenv.nix` with it.
+`nix build` builds the native game (`flake.nix`). `bacon` watches `crates/` (`w` = wasm check).
 
 ```bash
 just build                  # fetch-data + toolchain + wasm (~5.5 GB download the first time)

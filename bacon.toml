@@ -1,0 +1,37 @@
+default_job = "check"
+
+[jobs.check]
+command = ["cargo", "check", "--locked", "--color", "always", "--workspace", "--all-targets"]
+need_stdout = false
+watch = ["crates"]
+
+[jobs.clippy]
+command = ["cargo", "clippy", "--locked", "--color", "always", "--workspace", "--all-targets", "--", "-D", "warnings"]
+need_stdout = false
+watch = ["crates"]
+
+# The browser build without linking; what check.yml runs.
+[jobs.wasm]
+command = ["cargo", "check", "--locked", "--color", "always", "--target", "wasm32-unknown-unknown", "-p", "wenilla", "--no-default-features", "--features", "webgpu"]
+need_stdout = false
+watch = ["crates"]
+
+[jobs.test]
+command = ["cargo", "nextest", "run", "--locked", "--color", "always", "--workspace", "--no-tests=pass", "--hide-progress-bar", "--failure-output", "final"]
+need_stdout = true
+analyzer = "nextest"
+watch = ["crates"]
+
+[jobs.run]
+command = ["cargo", "survivors"]
+env.WOW_DATA = "wow-data/Data"
+need_stdout = true
+allow_hierarchical_nav = true
+watch = ["crates"]
+on_change_strategy = "kill_then_restart"
+
+[keybindings]
+c = "job:clippy"
+w = "job:wasm"
+t = "job:test"
+r = "job:run"

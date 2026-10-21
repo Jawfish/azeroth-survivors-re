@@ -32,6 +32,26 @@ start:
 native: fetch-data
     WOW_DATA={{data}} cargo run --release -p warcraft-survivors
 
+# Check the native workspace
+check:
+    cargo check --locked --workspace --all-targets
+
+# Check the browser build without linking (what check.yml runs)
+check-wasm:
+    cargo check --locked --target wasm32-unknown-unknown -p wenilla --no-default-features --features webgpu
+
+# Run strict linting
+lint:
+    cargo clippy --locked --workspace --all-targets -- -D warnings
+
+# Format code
+fmt:
+    cargo fmt --all
+
+# Check formatting
+fmt-check:
+    cargo fmt --all -- --check
+
 # Remove the fetched game data and wasm build output
 clean:
     rm -rf web/dist {{data_dir}}

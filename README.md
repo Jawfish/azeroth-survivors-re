@@ -68,6 +68,10 @@ just start     # → open http://127.0.0.1:8090/
 
 Run `just` (or `just --list`) to list every recipe.
 
+**With Nix:** `direnv allow` (or `devenv shell`) gives the whole toolchain: Rust with the wasm
+target, wasm-bindgen, binaryen, just and the system libraries. `just build` still fetches the data
+and wasi-sdk. `nix build` builds the native game.
+
 ## Controls
 
 See [CONTROLS.md](CONTROLS.md). The short version: **WASD** to move, **Space** to jump, **F**
